@@ -2,6 +2,8 @@
 
 void setup()
 {
+  Serial.begin(9600);
+
   // // Setting the outputs
   // pinMode(S0, OUTPUT);
   // pinMode(S1, OUTPUT);
@@ -15,75 +17,95 @@ void setup()
   // digitalWrite(S0, HIGH);
   // digitalWrite(S1, LOW);
 
-  // initialize LED
+  // initialize LED strip WS2812B
   FastLED.addLeds<WS2812B, LED_PIN>(leds, NUM_LEDS);
 
-  uint8_t error = 0;
+  // initialize Paj7620 registers
+  initPaj720();
+}
 
-  Serial.begin(9600);
+// Ligits up the led strip based on the input color
+void lightUpLed(int *colorArray)
+{
+  for (int i = 0; i < NUM_LEDS; i++)
+  {
+    // Input order is Green, Red, Blue
+    leds[i] = CRGB(colorArray[1], colorArray[0], colorArray[2]);
+    FastLED.show();
+  }
+  FastLED.clear();
+}
+// Generates an array of NUM_GESTURES gestures for the gesture game
+// 0 is up, 1 is down, 2 is left, 3 is right
+int *generateGestures()
+{
+  static int gesturesArray[NUM_GESTURES];
+  for (int i = 0; i < NUM_GESTURES; i++)
+  {
+    gesturesArray[i] = random(4);
+  }
+  return gesturesArray;
+}
 
-  error = paj7620Init(); // initialize Paj7620 registers
-  if (error)
+// The gesture game function
+void gestureGame()
+{
+  int *gesturesArray = generateGestures();
+  unsigned long startMillis = millis();
+  // Loop through all 10 gestures, matching the right gesture
+  for (int i = 0; i < NUM_GESTURES; i++)
   {
-    Serial.print("INIT ERROR,CODE:");
-    Serial.println(error);
+    bool isNotMatching = true;
+    switch (gesturesArray[i])
+    {
+    case 0: // up
+      lightUpLed(colorRed);
+      while (isNotMatching)
+      {
+        isNotMatching = readGesture(GES_UP_FLAG);
+      }
+      piezo.beep(200, 300);
+      Serial.println("Match to up!");
+      break;
+    case 1: // down
+      lightUpLed(colorBlue);
+      while (isNotMatching)
+      {
+        isNotMatching = readGesture(GES_DOWN_FLAG);
+      }
+      piezo.beep(200, 300);
+      Serial.println("Match to down!");
+      break;
+    case 2: // left
+      lightUpLed(colorYellow);
+      while (isNotMatching)
+      {
+        isNotMatching = readGesture(GES_LEFT_FLAG);
+      }
+      piezo.beep(200, 300);
+      Serial.println("Match to left!");
+      break;
+    case 3: // right
+      lightUpLed(colorGreen);
+      while (isNotMatching)
+      {
+        isNotMatching = readGesture(GES_RIGHT_FLAG);
+      }
+      piezo.beep(200, 300);
+      Serial.println("Match to right!");
+      break;
+    }
   }
-  else
-  {
-    Serial.println("INIT OK");
-  }
-  Serial.println("Please input your gestures:\n");
+  unsigned long finishMillis = millis();
+  gestureGameTime = finishMillis - startMillis;
+  Serial.println(gestureGameTime);
 }
 
 void loop()
 {
-  for (int i = 0; i < NUM_LEDS; i++)
-  {
-    // CRGB ( 0, 0, 255)
-    leds[i] = CRGB::Black;
-    FastLED.show();
-  }
-
-  uint8_t data = 0, data1 = 0, error;
-
-  error = paj7620ReadReg(0x43, 1, &data); // Read Bank_0_Reg_0x43/0x44 for gesture result.
-  if (!error)
-  {
-    switch (data) // When different gestures be detected, the variable 'data' will be set to different values by paj7620ReadReg(0x43, 1, &data).
-    {
-    case GES_RIGHT_FLAG:
-      paj7620ReadReg(0x43, 1, &data);
-      Serial.println("Right");
-      break;
-    case GES_LEFT_FLAG:
-      paj7620ReadReg(0x43, 1, &data);
-      Serial.println("Left");
-      break;
-    case GES_UP_FLAG:
-      paj7620ReadReg(0x43, 1, &data);
-      Serial.println("Up");
-      break;
-    case GES_DOWN_FLAG:
-      paj7620ReadReg(0x43, 1, &data);
-      Serial.println("Down");
-      break;
-    default:
-      paj7620ReadReg(0x44, 1, &data1);
-      if (data1 == GES_WAVE_FLAG)
-      {
-        Serial.println("wave");
-      }
-      break;
-    }
-  }
-  delay(100);
-
-  // int freq;
-  // for (freq = 50; freq <= 6000; freq = freq + 50)
-  // {
-  //   piezo.beep(freq, 200);
-  //   delay(50);
-  // }
+  gestureGame();
+  piezo.beep(200, 1000);
+  delay(1000);
 
   // // Setting RED (R) filtered photodiodes to be read
   // digitalWrite(S2, LOW);
@@ -119,14 +141,4 @@ void loop()
   // // Printing the BLUE (B) value
   // Serial.print(" B = ");
   // Serial.println(blueFrequency);
-}
-
-void lightUpLed()
-{
-  for (int i = 0; i < NUM_LEDS; i++)
-  {
-    // CRGB ( 0, 0, 255)
-    leds[i] = CRGB::Black;
-    FastLED.show();
-  }
 }
