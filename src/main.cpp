@@ -3,6 +3,8 @@
 void setup()
 {
   Serial.begin(9600);
+  // Initialize Servos
+  gearServo.attach(GEARSERVO_PIN);
 
   // // Setting the outputs
   // pinMode(S0, OUTPUT);
@@ -103,8 +105,24 @@ void gestureGame()
 
 void loop()
 {
-  gestureGame();
-  piezo.beep(200, 1000);
+  // Position "90" (1.5ms pulse) is stop
+  // "180" (2ms pulse) is full speed forward
+  // "0" (1ms pulse) is full speed backward
+
+  unsigned long servoStartMillis = millis();
+  while (millis() - servoStartMillis < 10)
+  {
+    gearServo.write(180);
+  }
+  delay(500);
+  servoStartMillis = millis();
+  while (millis() - servoStartMillis < 10)
+  {
+    gearServo.write(0);
+  }
+
+  // gestureGame();
+  // piezo.beep(200, 1000);
   delay(1000);
 
   // // Setting RED (R) filtered photodiodes to be read
