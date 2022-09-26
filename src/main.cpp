@@ -3,21 +3,29 @@
 void setup()
 {
   Serial.begin(9600);
+
+  Serial.begin(9600);		// Initialize serial communications with the PC
+	while (!Serial);		// Do nothing if no serial port is opened (added for Arduinos based on ATMEGA32U4)
+	SPI.begin();			// Init SPI bus
+	mfrc522.PCD_Init();		// Init MFRC522
+	mfrc522.PCD_DumpVersionToSerial();	// Show details of PCD - MFRC522 Card Reader details
+	Serial.println(F("Scan PICC to see UID, SAK, type, and data blocks..."));
+
   // Initialize Servos
-  gearServo.attach(GEARSERVO_PIN);
+	gearServo.attach(GEARSERVO_PIN);
 
-  // // Setting the outputs
-  // pinMode(S0, OUTPUT);
-  // pinMode(S1, OUTPUT);
-  // pinMode(S2, OUTPUT);
-  // pinMode(S3, OUTPUT);
+  // Setting the outputs of the color sensor
+  pinMode(S0, OUTPUT);
+  pinMode(S1, OUTPUT);
+  pinMode(S2, OUTPUT);
+  pinMode(S3, OUTPUT);
 
-  // // Setting the sensorOut as an input
-  // pinMode(sensorOut, INPUT);
+  // Setting the sensorOut as an input
+  pinMode(sensorOut, INPUT);
 
-  // // Setting frequency scaling to 20%
-  // digitalWrite(S0, HIGH);
-  // digitalWrite(S1, LOW);
+  // Setting frequency scaling to 20%
+  digitalWrite(S0, HIGH);
+  digitalWrite(S1, LOW);
 
   // initialize LED strip WS2812B
   FastLED.addLeds<WS2812B, LED_PIN>(leds, NUM_LEDS);
@@ -105,25 +113,21 @@ void gestureGame()
 
 void loop()
 {
-  // Position "90" (1.5ms pulse) is stop
-  // "180" (2ms pulse) is full speed forward
-  // "0" (1ms pulse) is full speed backward
-
-  unsigned long servoStartMillis = millis();
-  while (millis() - servoStartMillis < 10)
-  {
-    gearServo.write(180);
-  }
-  delay(500);
-  servoStartMillis = millis();
-  while (millis() - servoStartMillis < 10)
-  {
-    gearServo.write(0);
-  }
+  // // Rotate to right is 0
+  // gearServo.write(0);
+  // delay(180);
+  // // Stop is 90
+  // gearServo.write(90);
+  // delay(2000);
+  // gearServo.write(0);
+  // delay(360);
+  // // Stop is 90
+  // gearServo.write(90);
+  // delay(2000);
 
   // gestureGame();
   // piezo.beep(200, 1000);
-  delay(1000);
+  // delay(1000);
 
   // // Setting RED (R) filtered photodiodes to be read
   // digitalWrite(S2, LOW);
@@ -159,4 +163,23 @@ void loop()
   // // Printing the BLUE (B) value
   // Serial.print(" B = ");
   // Serial.println(blueFrequency);
+  // // Look for new cards
+	// if ( ! mfrc522.PICC_IsNewCardPresent()) {
+	// 	return;
+	// }
+
+	// // Select one of the cards
+	// if ( ! mfrc522.PICC_ReadCardSerial()) {
+	// 	return;
+	// }
+
+  // // Convert uid to a string
+  // String card_uid = "";
+  // for (byte i = 0; i < mfrc522.uid.size; i++)
+  // {
+  //   card_uid.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " "));
+  //   card_uid.concat(String(mfrc522.uid.uidByte[i], HEX));
+  // }
+  // card_uid.toUpperCase();
+  // Serial.println(card_uid.substring(1));
 }
