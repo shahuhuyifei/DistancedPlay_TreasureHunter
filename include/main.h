@@ -4,51 +4,41 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include "gesture_functions.h"
-#include "FastLED.h"
 #include <BobaBlox.h>
-#include <Servo.h>
 #include <SPI.h>
 #include <MFRC522.h>
+#include <Adafruit_NeoPixel.h>
 
-#define RST_PIN         25          // Configurable, see typical pin layout above
+// Define pins for RFID reader
+#define RST_PIN         25   
 #define SS_PIN          26  
 
+// Declaration of the RFID reader
 MFRC522 mfrc522(SS_PIN, RST_PIN);
-
-// Define the servo that rotate the gear
-Servo gearServo;
-// Define the pin for gearServo
-#define GEARSERVO_PIN 21
 
 // Define a speaker called piezo on a pin
 Speaker piezo(32);
-
-// Define pin numbers for color sensor
-#define S0 27
-#define S1 33
-#define S2 32
-#define S3 14
-#define sensorOut 15
 
 // defining gesture game array size
 #define NUM_GESTURES 10
 int gestureGameTime = 0;
 
-// Stores frequency read by the color sensor
-int redFrequency = 0;
-int greenFrequency = 0;
-int blueFrequency = 0;
+// Defining number of leds and pin for the neopixel
+#define NUMPIXELS  8
+#define LED_PIN   16
 
-// Defining number of leds and pin for the led strip
-#define NUM_LEDS 8
-#define LED_PIN 16
-// Declarations of the led strip
-CRGB leds[NUM_LEDS];
+// Declaration of the neopixel
+Adafruit_NeoPixel pixels(NUMPIXELS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
-// Stores RGB colors
-int colorRed[3] = {255, 0, 0};
-int colorBlue[3] = {0, 0, 255};
-int colorYellow[3] = {255, 255, 0};
-int colorGreen[3] = {0, 255, 0};
+// Store RGB colors
+uint32_t red = pixels.Color(255, 0, 0);
+uint32_t blue = pixels.Color(0, 0, 255);
+uint32_t yellow = pixels.Color(55, 255, 0);
+uint32_t green = pixels.Color(0, 255, 0);
+uint32_t black = pixels.Color(0, 0, 0);
 
+// Store RFID card IDs
+#define NUM_CARDS 6
+String playerACards[NUM_CARDS] = {"BE 5D 4C 7F", "2E 68 07 90", "8E 78 07 90", "4E D0 06 90", "1E 54 07 90", "4E 4B 4C 7F"};
+String playerBCards[NUM_CARDS] = {"AE 69 07 90", "DE 0B 4C 7F", "1E 80 07 90", "9E 6B 4C 7F", "9E 0B 4C 7F", "8E 5A 07 90"};
 #endif

@@ -13,9 +13,8 @@ void initPaj720()
   }
   else
   {
-    Serial.println("INIT OK");
+    Serial.println("INIT GESTURE OK");
   }
-  Serial.println("Please input your gestures:\n");
 }
 
 // Reads one gesture input
