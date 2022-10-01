@@ -1,5 +1,8 @@
 #include "main.h"
 
+
+char player = 'A';
+
 // Ligit up the led strip based on the input color
 void lightUpLed(uint32_t color)
 {
@@ -85,6 +88,20 @@ void setup()
 {
   Serial.begin(9600);		// Initialize serial communications with the PC
 
+  // Init ESPNow communication between two boards
+  WiFi.mode(WIFI_MODE_STA);
+  WiFi.disconnect();
+  ESPNow.init();
+  if (player == 'A')
+  {
+    ESPNow.add_peer(playerB_mac);
+  }
+  else
+  {
+    ESPNow.add_peer(playerA_mac);
+  }
+  ESPNow.reg_recv_cb(onRecv);
+
 	while (!Serial);		// Do nothing if no serial port is opened (added for Arduinos based on ATMEGA32U4)
 	SPI.begin();			// Init SPI bus
 	mfrc522.PCD_Init();		// Init MFRC522
@@ -99,7 +116,11 @@ void setup()
 
 void loop()
 {
-  int treasureCard = 1;
+  // static uint8_t a = 0;
+  // delay(100);
+  // ESPNow.send_message(playerB_mac, &a, 1);
+  // Serial.println(a++);
+  // int treasureCard = 1;
   int hallVal = hallRead();
   // Serial.println(hallVal);
   if (hallVal > -10 || hallVal < -45) {
@@ -110,7 +131,7 @@ void loop()
   // Look for new cards
 	if ( ! mfrc522.PICC_IsNewCardPresent())
   {
-		return;
+		return; 
 	}
 
 	// Select one of the cards
