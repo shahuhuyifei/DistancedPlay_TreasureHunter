@@ -9,6 +9,12 @@ void onRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len)
     treasure_card = data[0];
     Serial.println(treasure_card);
   }
+
+  if (data[1] == 1)
+  {
+    otherPlayer_Status = 1;
+    Serial.println(otherPlayer_Status);
+  }
 }
 
 // Ligit up the led strip based on the input color
@@ -19,6 +25,22 @@ void lightUpLed(uint32_t color)
     pixels.setPixelColor(i, color);
     pixels.show();
   }
+}
+
+void lightBreath(uint32_t color)
+{
+  for (int i = 0; i <= 128; i++)
+  {
+    pixels.setBrightness(i);
+    lightUpLed(color);
+  }
+  for (int i = 128; i >= 0; i--)
+  {
+    pixels.setBrightness(i);
+    lightUpLed(color);
+  }
+  lightUpLed(black);
+  pixels.setBrightness(128);
 }
 
 // Generates an array of NUM_GESTURES gestures for the gesture game
@@ -116,40 +138,35 @@ void setup()
 
 void loop()
 {
-  // int treasureCard = 1;
-  // int hallVal = hallRead();
-  // // Serial.println(hallVal);
-  // if (hallVal > -10 || hallVal < -45) {
-  //   piezo.beep(200, 1000);
-  //   gestureGame();
-  //   piezo.beep(200, 1000);
-  // }
-  // // Look for new cards
-  // if ( ! mfrc522.PICC_IsNewCardPresent())
-  // {
-  // 	return;
-  // }
+  // Loop 3 rounds of the gesture game and guessing
+  for (int i = 0; i < ROUNDS; i++)
+  {
 
-  // // Select one of the cards
-  // if ( ! mfrc522.PICC_ReadCardSerial())
-  // {
-  // 	return;
-  // }
-
-  // // Convert uid to a string
-  // String card_uid = "";
-  // for (byte i = 0; i < mfrc522.uid.size; i++)
-  // {
-  //   card_uid.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " "));
-  //   card_uid.concat(String(mfrc522.uid.uidByte[i], HEX));
-  // }
-  // card_uid.toUpperCase();
-  // card_uid = card_uid.substring(1);
-  // Serial.println(card_uid);
-
-  // if (card_uid == playerACards[treasureCard])
-  // {
-  //   // Display blue light and make victory sound
-  //   lightUpLed(blue);
-  // }
+    while (true)
+    {
+      // Notify the other player that this player is ready when a magnet touch the hall sensor
+      int hallVal = hallRead();
+      // Serial.println(hallVal);
+      if (hallVal > 50 || hallVal < -60)
+      {
+        delay(100);
+        outcomingMessage[1] = 1;
+        ESPNow.send_message(playerA_mac, outcomingMessage, sizeof(outcomingMessage));
+        lightBreath(purple);
+        break;
+      }
+    }
+    while (true)
+    {
+      // If the other player is ready, start the gesture game
+      if (otherPlayer_Status == 1)
+      {
+        gestureGame();
+        piezo.beep(200, 1000);
+        otherPlayer_Status = 0;
+        outcomingMessage[1] = 0;
+        break;
+      }
+    }
+  }
 }

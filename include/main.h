@@ -37,6 +37,7 @@ uint32_t red = pixels.Color(255, 0, 0);
 uint32_t blue = pixels.Color(0, 0, 255);
 uint32_t yellow = pixels.Color(55, 255, 0);
 uint32_t green = pixels.Color(0, 255, 0);
+uint32_t purple = pixels.Color(128, 0, 128);
 uint32_t black = pixels.Color(0, 0, 0);
 
 // Store RFID card IDs
@@ -50,9 +51,11 @@ uint8_t playerB_mac[] = {0x3C, 0x61, 0x05, 0x4B, 0x05, 0x6C};
 
 #define ROUNDS 3
 uint8_t treasure_card = 0;
+
 uint8_t gestureGame_status = 0;
 uint8_t gestureGame_result = 0;
 
+uint8_t otherPlayer_Status = 0;
 static uint8_t outcomingMessage[] = {0, 0, 0};
 
 #endif
