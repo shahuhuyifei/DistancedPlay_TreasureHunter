@@ -8,7 +8,8 @@
 #include <SPI.h>
 #include <MFRC522.h>
 #include <Adafruit_NeoPixel.h>
-#include "ESPNow_functions.h"
+#include <WiFi.h>
+#include "ESPNowW.h"
 
 // Define pins for RFID reader
 #define RST_PIN         25   
@@ -44,10 +45,12 @@ String playerACards[NUM_CARDS] = {"BE 5D 4C 7F", "2E 68 07 90", "8E 78 07 90", "
 String playerBCards[NUM_CARDS] = {"AE 69 07 90", "DE 0B 4C 7F", "1E 80 07 90", "9E 6B 4C 7F", "9E 0B 4C 7F", "8E 5A 07 90"};
 
 // Store MAC addresses
-uint8_t playerA_mac[] = {0x3C, 0x61, 0x05, 0x4B, 0x05, 0x6C};
-uint8_t playerB_mac[] = {0xE8, 0x31, 0xCD, 0x63, 0x5F, 0xD0};
+uint8_t playerA_mac[] = {0xE8, 0x31, 0xCD, 0x63, 0x5F, 0xD0};
+uint8_t playerB_mac[] = {0x3C, 0x61, 0x05, 0x4B, 0x05, 0x6C};
 
-uint8_t treasure_card = 0;
-uint8_t gestureGame_status = 0;
-uint8_t gestureGame_result = 0;
+#define ROUNDS = 3;
+String treasureCard_uid;
+
+// Position 0 is treasure card, 1 is guessed card, 2 is gesture game status, 3 is gesture game result
+static uint8_t outcomingMessage[] = {0, 0, 0, 0};
 #endif
