@@ -1,7 +1,15 @@
 #include "main.h"
 
+//  Perform tasks when data received from another board
+void onRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len)
+{
 
-char player = 'A';
+  if (data[0] != 0 && treasure_card == 0)
+  {
+    treasure_card = data[0];
+    Serial.println(treasure_card);
+  }
+}
 
 // Ligit up the led strip based on the input color
 void lightUpLed(uint32_t color)
@@ -86,74 +94,62 @@ void gestureGame()
 
 void setup()
 {
-  Serial.begin(9600);		// Initialize serial communications with the PC
+  Serial.begin(9600); // Initialize serial communications with the PC
 
   // Init ESPNow communication between two boards
   WiFi.mode(WIFI_MODE_STA);
   WiFi.disconnect();
   ESPNow.init();
-  if (player == 'A')
-  {
-    ESPNow.add_peer(playerB_mac);
-  }
-  else
-  {
-    ESPNow.add_peer(playerA_mac);
-  }
+  ESPNow.add_peer(playerA_mac);
   ESPNow.reg_recv_cb(onRecv);
 
-	while (!Serial);		// Do nothing if no serial port is opened (added for Arduinos based on ATMEGA32U4)
-	SPI.begin();			// Init SPI bus
-	mfrc522.PCD_Init();		// Init MFRC522
-	mfrc522.PCD_DumpVersionToSerial();	// Show details of PCD - MFRC522 Card Reader details
+  SPI.begin();                       // Init SPI bus
+  mfrc522.PCD_Init();                // Init MFRC522
+  mfrc522.PCD_DumpVersionToSerial(); // Show details of PCD - MFRC522 Card Reader details
 
   pixels.begin(); // Initialize neopixel
   pixels.setBrightness(128);
   lightUpLed(black);
-  
+
   initPaj720(); // Initialize Paj7620 registers
 }
 
 void loop()
 {
-  // static uint8_t a = 0;
-  // delay(100);
-  // ESPNow.send_message(playerB_mac, &a, 1);
-  // Serial.println(a++);
   // int treasureCard = 1;
-  int hallVal = hallRead();
-  // Serial.println(hallVal);
-  if (hallVal > -10 || hallVal < -45) {
-    piezo.beep(200, 1000);
-    gestureGame();
-    piezo.beep(200, 1000);
-  }
-  // Look for new cards
-	if ( ! mfrc522.PICC_IsNewCardPresent())
-  {
-		return; 
-	}
+  // int hallVal = hallRead();
+  // // Serial.println(hallVal);
+  // if (hallVal > -10 || hallVal < -45) {
+  //   piezo.beep(200, 1000);
+  //   gestureGame();
+  //   piezo.beep(200, 1000);
+  // }
+  // // Look for new cards
+  // if ( ! mfrc522.PICC_IsNewCardPresent())
+  // {
+  // 	return;
+  // }
 
-	// Select one of the cards
-	if ( ! mfrc522.PICC_ReadCardSerial())
-  {
-		return;
-	}
+  // // Select one of the cards
+  // if ( ! mfrc522.PICC_ReadCardSerial())
+  // {
+  // 	return;
+  // }
 
-  // Convert uid to a string
-  String card_uid = "";
-  for (byte i = 0; i < mfrc522.uid.size; i++)
-  {
-    card_uid.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " "));
-    card_uid.concat(String(mfrc522.uid.uidByte[i], HEX));
-  }
-  card_uid.toUpperCase();
-  card_uid = card_uid.substring(1);
-  Serial.println(card_uid);
+  // // Convert uid to a string
+  // String card_uid = "";
+  // for (byte i = 0; i < mfrc522.uid.size; i++)
+  // {
+  //   card_uid.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " "));
+  //   card_uid.concat(String(mfrc522.uid.uidByte[i], HEX));
+  // }
+  // card_uid.toUpperCase();
+  // card_uid = card_uid.substring(1);
+  // Serial.println(card_uid);
 
-  if (card_uid == playerACards[treasureCard])
-  {
-    // Display blue light and make victory sound
-    lightUpLed(blue);
-  }
+  // if (card_uid == playerACards[treasureCard])
+  // {
+  //   // Display blue light and make victory sound
+  //   lightUpLed(blue);
+  // }
 }
