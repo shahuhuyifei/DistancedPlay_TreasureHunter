@@ -37,6 +37,7 @@ uint32_t red = pixels.Color(255, 0, 0);
 uint32_t blue = pixels.Color(0, 0, 255);
 uint32_t yellow = pixels.Color(55, 255, 0);
 uint32_t green = pixels.Color(0, 255, 0);
+uint32_t purple = pixels.Color(128, 0, 128);
 uint32_t black = pixels.Color(0, 0, 0);
 
 // Store RFID card IDs
@@ -48,9 +49,11 @@ String playerBCards[NUM_CARDS] = {"AE 69 07 90", "DE 0B 4C 7F", "1E 80 07 90", "
 uint8_t playerA_mac[] = {0xE8, 0x31, 0xCD, 0x63, 0x5F, 0xD0};
 uint8_t playerB_mac[] = {0x3C, 0x61, 0x05, 0x4B, 0x05, 0x6C};
 
-#define ROUNDS = 3;
+#define ROUNDS 3
 String treasureCard_uid;
 
-// Position 0 is treasure card, 1 is guessed card, 2 is gesture game status, 3 is gesture game result
-static uint8_t outcomingMessage[] = {0, 0, 0, 0};
+uint8_t otherPlayer_Status = 0;
+unsigned long gestureGame_result = 0;
+// Position 0 is treasure card, 1 is gesture game status, 2 is gesture game result
+static uint8_t outcomingMessage[] = {0, 0, 0};
 #endif

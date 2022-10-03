@@ -2,7 +2,11 @@
 
 // Perform tasks when data received from the other board 
 void onRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
-
+  if (data[1] == 1)
+  {
+    otherPlayer_Status = 1;
+    Serial.println(otherPlayer_Status);
+  }
 }
 
 // Ligit up the led strip based on the input color
@@ -44,7 +48,7 @@ int *generateGestures()
 }
 
 // The gesture game function
-void gestureGame()
+unsigned long gestureGame()
 {
   int *gesturesArray = generateGestures();
   unsigned long startMillis = millis();
@@ -100,6 +104,7 @@ void gestureGame()
   unsigned long finishMillis = millis();
   gestureGameTime = finishMillis - startMillis;
   Serial.println(gestureGameTime);
+  return gestureGameTime;
 }
 
 void setup()
@@ -127,23 +132,7 @@ void setup()
 
 void loop()
 {
-  // int hallVal = hallRead();
-  // Serial.println(hallVal);
-  // if (hallVal > 10 || hallVal < -60) {
-  //   piezo.beep(200, 1000);
-  //   gestureGame_status = 1;
-
-  //   gestureGame();
-  //   piezo.beep(200, 1000);
-  // }
-  // if (hallVal > 100 || hallVal < 40) {
-  //   piezo.beep(200, 1000);
-  //   gestureGame();
-  //   piezo.beep(200, 1000);
-  // }
-
-  
-  
+  // Start the game by setting and seding the number of the treasure card
   while (treasureCard_uid == NULL)
   {
     // Look for new cards
@@ -164,6 +153,7 @@ void loop()
     }
     treasureCard_uid.toUpperCase();
     treasureCard_uid = treasureCard_uid.substring(1);
+    // Match the card number
     for (int i = 0; i < NUM_CARDS; i++)
     {
     if (treasureCard_uid == playerACards[i])
@@ -171,14 +161,41 @@ void loop()
         outcomingMessage[0] = i + 1; // Plus 1 to ignore the initial 0 value
         delay(100);
         ESPNow.send_message(playerB_mac, outcomingMessage, sizeof(outcomingMessage));
-        lightBreath(blue);
+        lightBreath(green);
       }
     }
   }
-  
-  // if (cartreasureCard_uidd_uid == playerACards[1])
-  // {
-  //   // Display blue light and make victory sound
-  //   lightUpLed(blue);
-  // }
+
+  //Loop 3 rounds of the gesture game and guessing
+  for (int i = 0; i < ROUNDS; i++)
+  {
+    // Notify the other player that this player is ready when a magnet touch the hall sensor
+    while (true)
+    {
+      int hallVal = hallRead();
+      // Serial.println(hallVal);
+      if (hallVal > 150 || hallVal < 40)
+      {
+        delay(100);
+        outcomingMessage[1] = 1;
+        ESPNow.send_message(playerB_mac, outcomingMessage, sizeof(outcomingMessage));
+        lightBreath(purple);
+        break;
+      }
+    }
+    while (true)
+    {
+      // If the other player is ready, start the gesture game
+      if (otherPlayer_Status == 1)
+      {
+        gestureGame_result = gestureGame();
+        piezo.beep(200, 1000);
+        otherPlayer_Status = 0;
+        outcomingMessage[1] = 0;
+        outcomingMessage[2] = gestureGame_result;
+        ESPNow.send_message(playerB_mac, outcomingMessage, sizeof(outcomingMessage));
+        break;
+      }
+    } 
+  }
 }
