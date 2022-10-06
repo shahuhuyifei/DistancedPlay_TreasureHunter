@@ -9,7 +9,7 @@ void lightUpLed(uint32_t color)
     pixels.show();
   }
 }
-
+// Light turn on and fade out
 void lightBreath(uint32_t color)
 {
   for (int i = 0; i <= 128; i++)
@@ -17,6 +17,24 @@ void lightBreath(uint32_t color)
     pixels.setBrightness(i);
     lightUpLed(color);
   }
+  for (int i = 128; i >= 0; i--)
+  {
+    pixels.setBrightness(i);
+    lightUpLed(color);
+  }
+  lightUpLed(black);
+  pixels.setBrightness(128);
+}
+
+// Lights breath with sound effect
+void breathWithSound(uint32_t color, int sound)
+{
+  for (int i = 0; i <= 128; i++)
+  {
+    pixels.setBrightness(i);
+    lightUpLed(color);
+  }
+  cute.play(sound);
   for (int i = 128; i >= 0; i--)
   {
     pixels.setBrightness(i);
@@ -56,7 +74,7 @@ unsigned long gestureGame()
         isNotMatching = readGesture(GES_UP_FLAG);
       }
       lightUpLed(black);
-      piezo.beep(200, 300);
+      cute.play(S_MODE3);
       Serial.println("Match to up!");
       break;
     case 1: // down
@@ -66,7 +84,7 @@ unsigned long gestureGame()
         isNotMatching = readGesture(GES_DOWN_FLAG);
       }
       lightUpLed(black);
-      piezo.beep(200, 300);
+      cute.play(S_MODE3);
       Serial.println("Match to down!");
       break;
     case 2: // left
@@ -76,7 +94,7 @@ unsigned long gestureGame()
         isNotMatching = readGesture(GES_LEFT_FLAG);
       }
       lightUpLed(black);
-      piezo.beep(200, 300);
+      cute.play(S_MODE3);
       Serial.println("Match to left!");
       break;
     case 3: // right
@@ -86,7 +104,7 @@ unsigned long gestureGame()
         isNotMatching = readGesture(GES_RIGHT_FLAG);
       }
       lightUpLed(black);
-      piezo.beep(200, 300);
+      cute.play(S_MODE3);
       Serial.println("Match to right!");
       break;
     }
@@ -150,6 +168,9 @@ void setup()
   lightUpLed(black);
   
   initPaj720(); // Initialize Paj7620 registers
+
+  cute.init(BUZZER_PIN); // Initialize buzzer
+  cute.play(S_CONNECTION);
 }
 
 void loop()
@@ -183,7 +204,7 @@ void loop()
         outcomingMessage[0] = i + 1; // Plus 1 to ignore the initial 0 value
         delay(100);
         ESPNow.send_message(playerB_mac, outcomingMessage, sizeof(outcomingMessage));
-        lightBreath(green);
+        breathWithSound(green, S_BUTTON_PUSHED);
       }
     }
   }
@@ -201,7 +222,7 @@ void loop()
         delay(100);
         outcomingMessage[1] = 1;
         ESPNow.send_message(playerB_mac, outcomingMessage, sizeof(outcomingMessage));
-        lightBreath(purple);
+        breathWithSound(purple, S_MODE1);
         break;
       }
     }
@@ -212,7 +233,7 @@ void loop()
       if (otherPlayer_Status == 1)
       { 
         gestureGame_result = gestureGame();
-        piezo.beep(200, 1000);
+        cute.play(S_SUPER_HAPPY);
         otherPlayer_Status = 0;  // Reset the status of other player
         outcomingMessage[1] = 0; // Reset the messaging status
         unsigned long resultForCalculate = gestureGame_result;
@@ -240,15 +261,15 @@ void loop()
       {
         if(otherPlayer_result > gestureGame_result) //Win
         {
-          lightBreath(green);
+          breathWithSound(green, S_HAPPY);
         }
         else if(otherPlayer_result == gestureGame_result) // Even
         {
-          lightBreath(yellow);
+          breathWithSound(yellow, S_SURPRISE);
         }
         else // Lose
         {
-          lightBreath(red);
+          breathWithSound(red, S_SAD);
         }
         otherPlayer_result = 0;
         break;
@@ -262,11 +283,11 @@ void loop()
       {
         if (otherPlayer_Guess == outcomingMessage[0])
         {
-          lightBreath(red); // Correct - Lose
+          breathWithSound(red, S_SAD); // Correct - Lose
         }
         else
         {
-          lightBreath(green); // Incorrect - Win
+          breathWithSound(green, S_HAPPY); // Incorrect - Win
         }
         otherPlayer_Guess = 0;
         break;
