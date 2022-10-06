@@ -1,14 +1,5 @@
 #include "main.h"
 
-// Perform tasks when data received from the other board 
-void onRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
-  if (data[1] == 1)
-  {
-    otherPlayer_Status = 1;
-    Serial.println(otherPlayer_Status);
-  }
-}
-
 // Ligit up the led strip based on the input color
 void lightUpLed(uint32_t color)
 {
@@ -107,6 +98,37 @@ unsigned long gestureGame()
   return gestureGameTime;
 }
 
+// Perform tasks when data received from the other board 
+void onRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
+  if (data_len == 2)
+  {
+    // Store the treasure card number when it's available
+    if (data[0] != 0)
+    {
+      otherPlayer_Guess = data[0];
+      Serial.print("Guess: ");
+      Serial.println(otherPlayer_Guess);
+    }
+    // Store the other player gesture game status when it's available
+    if (data[1] == 1)
+    {
+      otherPlayer_Status = 1;
+      Serial.print("Other Player Status: ");
+      Serial.println(otherPlayer_Status);
+    }
+  }
+  else
+  {
+    // Convert the gesture game result array back to an unsigned long
+    for (int i = 0; i < data_len; i++)
+    {
+      otherPlayer_result += data[i] * pow(10, i);
+    }
+    Serial.print("Other Player result: ");
+    Serial.println(otherPlayer_result);
+  }
+}
+
 void setup()
 {
   Serial.begin(9600);		// Initialize serial communications with the PC
@@ -132,7 +154,7 @@ void setup()
 
 void loop()
 {
-  // Start the game by setting and seding the number of the treasure card
+  // Start the game by setting and sending the number of the treasure card
   while (treasureCard_uid == NULL)
   {
     // Look for new cards
@@ -185,17 +207,70 @@ void loop()
     }
     while (true)
     {
+      Serial.println(otherPlayer_Status);
       // If the other player is ready, start the gesture game
       if (otherPlayer_Status == 1)
-      {
+      { 
         gestureGame_result = gestureGame();
         piezo.beep(200, 1000);
-        otherPlayer_Status = 0;
-        outcomingMessage[1] = 0;
-        outcomingMessage[2] = gestureGame_result;
-        ESPNow.send_message(playerB_mac, outcomingMessage, sizeof(outcomingMessage));
+        otherPlayer_Status = 0;  // Reset the status of other player
+        outcomingMessage[1] = 0; // Reset the messaging status
+        unsigned long resultForCalculate = gestureGame_result;
+        // Convert gesture game result into uint8_t array to send
+        int resultLength = int(log10(resultForCalculate) + 1);
+        uint8_t gestureResultArray[resultLength];
+        // Source of next 7 line: https://forum.arduino.cc/t/long-integer-to-uint8_t/348706/2
+        // Modified by Yifei Wang
+        for (int i = 0; i < resultLength; i++)
+        {
+          gestureResultArray[i] = resultForCalculate % 10; // Remainder of division with 10 gets the last digit
+          resultForCalculate /= 10;                        // Dividing by ten chops off the last digit
+        }
+        Serial.println();
+        // -------------------------------------------------------------
+        ESPNow.send_message(playerB_mac, gestureResultArray, sizeof(gestureResultArray));
         break;
       }
-    } 
+    }
+    while (true)
+    {
+      Serial.println(otherPlayer_result);
+      // Wait for the other player's result come through
+      if (otherPlayer_result != 0)
+      {
+        if(otherPlayer_result > gestureGame_result) //Win
+        {
+          lightBreath(green);
+        }
+        else if(otherPlayer_result == gestureGame_result) // Even
+        {
+          lightBreath(yellow);
+        }
+        else // Lose
+        {
+          lightBreath(red);
+        }
+        otherPlayer_result = 0;
+        break;
+      }
+    }
+    while (true)
+    {
+      Serial.println(otherPlayer_Guess);
+      //Wait until the guessed card is received
+      if(otherPlayer_Guess != 0)
+      {
+        if (otherPlayer_Guess == outcomingMessage[0])
+        {
+          lightBreath(red); // Correct - Lose
+        }
+        else
+        {
+          lightBreath(green); // Incorrect - Win
+        }
+        otherPlayer_Guess = 0;
+        break;
+      }
+    }
   }
 }
