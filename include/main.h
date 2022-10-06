@@ -4,13 +4,13 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include "gesture_functions.h"
-#include <BobaBlox.h>
 #include <SPI.h>
 #include <MFRC522.h>
 #include <Adafruit_NeoPixel.h>
 #include <WiFi.h>
 #include "ESPNowW.h"
 #include <math.h>
+#include <CuteBuzzerSounds.h>
 
 // Define pins for RFID reader
 #define RST_PIN 25
@@ -19,11 +19,11 @@
 // Declaration of the RFID reader
 MFRC522 mfrc522(SS_PIN, RST_PIN);
 
-// Define a speaker called piezo on a pin
-Speaker piezo(32);
+// Define the buzzer pin
+#define BUZZER_PIN 32
 
 // defining gesture game array size
-#define NUM_GESTURES 1
+#define NUM_GESTURES 10
 int gestureGameTime = 0;
 
 // Defining number of leds and pin for the neopixel
