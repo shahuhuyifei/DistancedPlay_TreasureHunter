@@ -10,6 +10,7 @@
 #include <Adafruit_NeoPixel.h>
 #include <WiFi.h>
 #include "ESPNowW.h"
+#include <math.h>
 
 // Define pins for RFID reader
 #define RST_PIN 25
@@ -22,7 +23,7 @@ MFRC522 mfrc522(SS_PIN, RST_PIN);
 Speaker piezo(32);
 
 // defining gesture game array size
-#define NUM_GESTURES 10
+#define NUM_GESTURES 1
 int gestureGameTime = 0;
 
 // Defining number of leds and pin for the neopixel
@@ -49,13 +50,13 @@ String playerBCards[NUM_CARDS] = {"AE 69 07 90", "DE 0B 4C 7F", "1E 80 07 90", "
 uint8_t playerA_mac[] = {0xE8, 0x31, 0xCD, 0x63, 0x5F, 0xD0};
 uint8_t playerB_mac[] = {0x3C, 0x61, 0x05, 0x4B, 0x05, 0x6C};
 
-#define ROUNDS 3
-uint8_t treasure_card = 0;
+#define ROUNDS 3                      // Store round number
+uint8_t treasure_card = 0;            // Store the treasure card number
+String guessedCard_uid = "";          // Store the guessed card uid
+unsigned long gestureGame_result = 0; // Store gesture game result of this player
 
-uint8_t gestureGame_status = 0;
-uint8_t gestureGame_result = 0;
-
-uint8_t otherPlayer_Status = 0;
-static uint8_t outcomingMessage[] = {0, 0, 0};
+uint8_t otherPlayer_Status = 0;             // Store gesture game status of the other player
+unsigned long otherPlayer_result = 0;       // Store gesture game result of the other player
+static uint8_t outcomingMessage[] = {0, 0}; // Position 0 is treasure card, 1 is gesture game status
 
 #endif

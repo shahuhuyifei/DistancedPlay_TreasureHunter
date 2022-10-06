@@ -3,17 +3,33 @@
 //  Perform tasks when data received from another board
 void onRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len)
 {
-
-  if (data[0] != 0 && treasure_card == 0)
+  // When the data is the variable outcomingMessage
+  if (data_len == 2)
   {
-    treasure_card = data[0];
-    Serial.println(treasure_card);
+    // Store the treasure card number when it's available
+    if (data[0] != 0 && treasure_card == 0)
+    {
+      treasure_card = data[0];
+      Serial.print("Treasure Card: ");
+      Serial.println(treasure_card);
+    }
+    // Store the other player gesture game status when it's available
+    if (data[1] == 1)
+    {
+      otherPlayer_Status = 1;
+      Serial.println("Other Player Status: ");
+      Serial.println(otherPlayer_Status);
+    }
   }
-
-  if (data[1] == 1)
+  else
   {
-    otherPlayer_Status = 1;
-    Serial.println(otherPlayer_Status);
+    // Convert the gesture game result array back to an unsigned long
+    for (int i = 0; i < data_len; i++)
+    {
+      otherPlayer_result += data[i] * pow(10, i);
+    }
+    Serial.print("Other Player result: ");
+    Serial.println(otherPlayer_result);
   }
 }
 
@@ -56,7 +72,7 @@ int *generateGestures()
 }
 
 // The gesture game function
-void gestureGame()
+unsigned long gestureGame()
 {
   int *gesturesArray = generateGestures();
   unsigned long startMillis = millis();
@@ -112,6 +128,7 @@ void gestureGame()
   unsigned long finishMillis = millis();
   gestureGameTime = finishMillis - startMillis;
   Serial.println(gestureGameTime);
+  return gestureGameTime;
 }
 
 void setup()
@@ -141,7 +158,6 @@ void loop()
   // Loop 3 rounds of the gesture game and guessing
   for (int i = 0; i < ROUNDS; i++)
   {
-
     while (true)
     {
       // Notify the other player that this player is ready when a magnet touch the hall sensor
@@ -159,14 +175,95 @@ void loop()
     while (true)
     {
       // If the other player is ready, start the gesture game
+      Serial.println(otherPlayer_Status);
       if (otherPlayer_Status == 1)
       {
-        gestureGame();
+        gestureGame_result = gestureGame();
         piezo.beep(200, 1000);
         otherPlayer_Status = 0;
         outcomingMessage[1] = 0;
+        unsigned long resultForCalculate = gestureGame_result;
+        // Convert gesture game result into uint8_t array to send
+        int resultLength = int(log10(resultForCalculate) + 1);
+        uint8_t gestureResultArray[resultLength];
+        // Source of next 7 line: https://forum.arduino.cc/t/long-integer-to-uint8_t/348706/2
+        // Modified by Yifei Wang
+        for (int i = 0; i < resultLength; i++)
+        {
+          gestureResultArray[i] = resultForCalculate % 10; // Remainder of division with 10 gets the last digit
+          resultForCalculate /= 10;                        // Dividing by ten chops off the last digit
+        }
+        Serial.println();
+        // -------------------------------------------------------------
+        ESPNow.send_message(playerA_mac, gestureResultArray, sizeof(gestureResultArray));
         break;
       }
     }
+    while (true)
+    {
+      Serial.println(otherPlayer_result);
+      // Wait for the other player's result come through
+      if (otherPlayer_result != 0)
+      {
+        if (otherPlayer_result > gestureGame_result) // Win
+        {
+          lightBreath(green);
+        }
+        else if (otherPlayer_result == gestureGame_result) // Even
+        {
+          lightBreath(yellow);
+        }
+        else // Lose
+        {
+          lightBreath(red);
+        }
+        otherPlayer_result = 0;
+        break;
+      }
+    }
+    // Guess where the treasure is by tapping a card
+    while (guessedCard_uid == "")
+    {
+      Serial.println("here!");
+      // Look for new cards
+      if (!mfrc522.PICC_IsNewCardPresent())
+      {
+        continue;
+      }
+      // Select one of the cards
+      if (!mfrc522.PICC_ReadCardSerial())
+      {
+        continue;
+      }
+      // Convert uid to a string
+      for (byte i = 0; i < mfrc522.uid.size; i++)
+      {
+        guessedCard_uid.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " "));
+        guessedCard_uid.concat(String(mfrc522.uid.uidByte[i], HEX));
+      }
+      guessedCard_uid.toUpperCase();
+      guessedCard_uid = guessedCard_uid.substring(1);
+      // Match the card number
+      for (int i = 0; i < NUM_CARDS; i++)
+      {
+        if (guessedCard_uid == playerBCards[i])
+        {
+          // Send the guessed card
+          outcomingMessage[0] = i + 1; // Plus 1 to ignore the initial 0 value
+          delay(100);
+          ESPNow.send_message(playerA_mac, outcomingMessage, sizeof(outcomingMessage));
+          if (i + 1 == treasure_card)
+          {
+            lightBreath(green); // Correct - Win
+          }
+          else
+          {
+            lightBreath(red); // Incorrect - Lose
+          }
+        }
+      }
+    }
+    guessedCard_uid = "";
+    outcomingMessage[0] = 0;
   }
 }
