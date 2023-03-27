@@ -116,8 +116,9 @@ unsigned long gestureGame()
   return gestureGameTime;
 }
 
-// Perform tasks when data received from the other board 
-void onRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
+// Perform tasks when data received from the other board
+void onRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len)
+{
   if (data_len == 2)
   {
     // Store the treasure card number when it's available
@@ -149,7 +150,7 @@ void onRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
 
 void setup()
 {
-  Serial.begin(9600);		// Initialize serial communications with the PC
+  Serial.begin(9600); // Initialize serial communications with the PC
 
   // Init ESPNow communication between two boards
   WiFi.mode(WIFI_MODE_STA);
@@ -159,14 +160,14 @@ void setup()
   ESPNow.add_peer(playerB_mac);
   ESPNow.reg_recv_cb(onRecv);
 
-	SPI.begin();			// Init SPI bus
-	mfrc522.PCD_Init();		// Init MFRC522
-	mfrc522.PCD_DumpVersionToSerial();	// Show details of PCD - MFRC522 Card Reader details
+  SPI.begin();                       // Init SPI bus
+  mfrc522.PCD_Init();                // Init MFRC522
+  mfrc522.PCD_DumpVersionToSerial(); // Show details of PCD - MFRC522 Card Reader details
 
   pixels.begin(); // Initialize neopixel
   pixels.setBrightness(128);
   lightUpLed(black);
-  
+
   initPaj720(); // Initialize Paj7620 registers
 
   cute.init(BUZZER_PIN); // Initialize buzzer
@@ -179,16 +180,16 @@ void loop()
   while (treasureCard_uid == NULL)
   {
     // Look for new cards
-    if ( ! mfrc522.PICC_IsNewCardPresent())
-    {
-      continue; 
-    }
-    // Select one of the cards
-    if ( ! mfrc522.PICC_ReadCardSerial())
+    if (!mfrc522.PICC_IsNewCardPresent())
     {
       continue;
     }
-    // Convert uid to a string 
+    // Select one of the cards
+    if (!mfrc522.PICC_ReadCardSerial())
+    {
+      continue;
+    }
+    // Convert uid to a string
     for (byte i = 0; i < mfrc522.uid.size; i++)
     {
       treasureCard_uid.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " "));
@@ -199,7 +200,7 @@ void loop()
     // Match the card number
     for (int i = 0; i < NUM_CARDS; i++)
     {
-    if (treasureCard_uid == playerACards[i])
+      if (treasureCard_uid == playerACards[i])
       {
         outcomingMessage[0] = i + 1; // Plus 1 to ignore the initial 0 value
         delay(100);
@@ -209,7 +210,7 @@ void loop()
     }
   }
 
-  //Loop 3 rounds of the gesture game and guessing
+  // Loop 3 rounds of the gesture game and guessing
   for (int i = 0; i < ROUNDS; i++)
   {
     // Notify the other player that this player is ready when a magnet touch the hall sensor
@@ -231,7 +232,7 @@ void loop()
       Serial.println(otherPlayer_Status);
       // If the other player is ready, start the gesture game
       if (otherPlayer_Status == 1)
-      { 
+      {
         gestureGame_result = gestureGame();
         cute.play(S_SUPER_HAPPY);
         otherPlayer_Status = 0;  // Reset the status of other player
@@ -259,11 +260,11 @@ void loop()
       // Wait for the other player's result come through
       if (otherPlayer_result != 0)
       {
-        if(otherPlayer_result > gestureGame_result) //Win
+        if (otherPlayer_result > gestureGame_result) // Win
         {
           breathWithSound(green, S_HAPPY);
         }
-        else if(otherPlayer_result == gestureGame_result) // Even
+        else if (otherPlayer_result == gestureGame_result) // Even
         {
           breathWithSound(yellow, S_SURPRISE);
         }
@@ -278,8 +279,8 @@ void loop()
     while (true)
     {
       Serial.println(otherPlayer_Guess);
-      //Wait until the guessed card is received
-      if(otherPlayer_Guess != 0)
+      // Wait until the guessed card is received
+      if (otherPlayer_Guess != 0)
       {
         if (otherPlayer_Guess == outcomingMessage[0])
         {
